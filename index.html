@@ -53,7 +53,6 @@
   }
   .botoes a.principal { background: var(--azul); color: #fff; }
   .rodape { font-size: 12px; margin: 4px 0 0; }
-  .nota { font-size: 12px; color: var(--cinza); margin: 6px 0 0; }
   .recolhido .corpo { display: none; }
   .erro h1 { color: var(--erro); }
   .v { box-sizing: border-box; border: 2px solid #111; border-radius: 50%; background: #fff; }
@@ -274,12 +273,8 @@
     ponto + '">Como chegar</a>' +
     '<a target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&amp;query=' + ponto +
     '">Google Maps</a></div>';
-  var notas = {
-    1: 'Sem os códigos dos pontos P e V, para caber no QR.',
-    2: 'Sem os códigos dos vértices, para caber no QR.',
-    3: 'Contorno simplificado (até ' + String(imovel.tolerancia).replace('.', ',') + ' m) para caber no QR.'
-  };
-  if (notas[imovel.corte]) html += '<p class="nota">' + esc(notas[imovel.corte]) + '</p>';
+  // o corte do QR (sem códigos, contorno simplificado) não vira nota no cartão: quem abre não precisa saber (RT,
+  // 07/11/2026: "pode retirar"); a conferência da Estação continua avisando o RT
   html += '<p class="rodape">Contorno para visualização. Coordenadas oficiais na planta e no memorial.</p></div>';
   conteudo.innerHTML = html;
 
