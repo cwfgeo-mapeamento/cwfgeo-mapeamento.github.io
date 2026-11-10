@@ -16,6 +16,7 @@
   Ajustes:
     ZOOM_PONTOS   a partir deste zoom aparecem os pontos (símbolos da legenda da planta)
     ZOOM_CODIGOS  a partir deste zoom aparecem os códigos
+    ZOOM_ENQUADRAR  zoom máximo ao abrir (imóvel pequeno não abre colado)
     ESRI_NATIVO   último nível com imagem do Esri no Acre; acima, amplia a última (não fica branco)
 -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
@@ -91,7 +92,7 @@
 (function () {
   'use strict';
   var CHAVE_GOOGLE = '';
-  var ZOOM_PONTOS = 16, ZOOM_CODIGOS = 18, ESRI_NATIVO = 17, ZOOM_MAX = 20;
+  var ZOOM_PONTOS = 14, ZOOM_CODIGOS = 15, ZOOM_ENQUADRAR = 18, ESRI_NATIVO = 17, ZOOM_MAX = 20;   // RT, 09/11/2026: códigos com menos zoom
   var AZUL_CLARO = '#4FD2FF', CONTORNO_FUNDO = '#06263D';
 
   var cartao = document.getElementById('cartao');
@@ -281,7 +282,7 @@
   function enquadrar() {
     var alto = cartao.classList.contains('recolhido') ? 60 : Math.min(cartao.offsetHeight, window.innerHeight * 0.46);
     mapa.fitBounds(L.latLngBounds(todos), { paddingTopLeft: [24, 56], paddingBottomRight: [24, alto + 16],
-                                            maxZoom: ZOOM_CODIGOS });
+                                            maxZoom: ZOOM_ENQUADRAR });
     camadasDoZoom();
   }
   enquadrar();
