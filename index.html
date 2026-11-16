@@ -38,14 +38,27 @@
     border-radius: 14px 14px 0 0; box-shadow: 0 -2px 12px rgba(0,0,0,.3);
     padding: 6px 16px calc(12px + env(safe-area-inset-bottom)); max-height: 46vh; overflow-y: auto;
   }
-  .alca { display: block; width: 100%; border: 0; background: none; padding: 6px 0 4px; cursor: pointer; }
-  .alca span { display: block; width: 40px; height: 4px; margin: 0 auto; border-radius: 2px; background: var(--borda); }
+  /* alça do cartão (RT, 16/11/2026: "não consigo abaixar os textos ... estão ocupando metade da tela"): o tracinho
+     sozinho não era achado; agora tem texto, área de toque de 44 px, e o cartão também recolhe arrastando para
+     baixo, tocando no título ou no mapa */
+  .alca { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 44px;
+          border: 0; background: none; padding: 4px 0; cursor: pointer; color: var(--cinza); font: inherit;
+          font-size: 13px; font-weight: 600; -webkit-tap-highlight-color: transparent; }
+  .alca span { display: block; width: 40px; height: 4px; border-radius: 2px; background: var(--borda); }
+  .alca em { font-style: normal; }
+  .alca .seta { display: inline-block; transition: transform .2s; }
+  .recolhido .alca .seta { transform: rotate(180deg); }
+  .corpo-cab { cursor: pointer; }
+  .recolhido { max-height: none; overflow: hidden; }
+  .recolhido .municipio { display: none; }
+  .recolhido .cartao h1, .cartao.recolhido h1 { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px; }
   .cartao h1 { font-size: 17px; margin: 2px 0 4px; line-height: 1.25; }
   .numeros { display: flex; flex-wrap: wrap; gap: 4px 18px; margin: 4px 0 2px; }
   .numeros b { display: block; font-size: 16px; }
   .numeros small, .rodape, .municipio { color: var(--cinza); }
   .municipio { margin: 0 0 6px; }
-  .parcelas { margin: 6px 0 0; padding: 0; list-style: none; }
+  .parcelas { margin: 6px 0 0; padding: 0; list-style: none; display: grid;
+              grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0 12px; font-size: 14px; }
   .parcelas li { padding: 2px 0; }
   .botoes { display: flex; gap: 8px; margin: 12px 0 8px; }
   .botoes a {
@@ -80,7 +93,8 @@
 <div id="mapa" role="application" aria-label="Mapa do imóvel"></div>
 <div class="marca">CWF GEO</div>
 <section id="cartao" class="cartao" aria-live="polite">
-  <button class="alca" type="button" aria-label="Mostrar ou esconder os dados"><span></span></button>
+  <button class="alca" type="button" aria-expanded="true"><span></span><em class="alca-txt">Esconder dados</em>
+    <b class="seta" aria-hidden="true">▾</b></button>
   <div id="conteudo"><h1>Abrindo o imóvel…</h1></div>
 </section>
 <noscript><p style="color:#fff;padding:16px">Esta página precisa de JavaScript ligado no navegador.</p></noscript>
@@ -97,7 +111,28 @@
 
   var cartao = document.getElementById('cartao');
   var conteudo = document.getElementById('conteudo');
-  cartao.querySelector('.alca').addEventListener('click', function () { cartao.classList.toggle('recolhido'); });
+  var alca = cartao.querySelector('.alca');
+  function recolher(sim) {
+    cartao.classList.toggle('recolhido', sim);
+    alca.setAttribute('aria-expanded', sim ? 'false' : 'true');
+    alca.querySelector('.alca-txt').textContent = sim ? 'Ver dados' : 'Esconder dados';
+    if (!sim) cartao.scrollTop = 0;
+  }
+  alca.addEventListener('click', function () { recolher(!cartao.classList.contains('recolhido')); });
+  // tocar no título também abre e fecha
+  cartao.addEventListener('click', function (ev) {
+    if (ev.target.closest && ev.target.closest('.corpo-cab')) recolher(!cartao.classList.contains('recolhido'));
+  });
+  // arrastar o cartão: para baixo recolhe (só com a lista no topo), para cima abre
+  var toqueY = null;
+  cartao.addEventListener('touchstart', function (ev) { toqueY = ev.touches[0].clientY; }, { passive: true });
+  cartao.addEventListener('touchend', function (ev) {
+    if (toqueY === null) return;
+    var dy = ev.changedTouches[0].clientY - toqueY;
+    toqueY = null;
+    if (dy > 40 && cartao.scrollTop <= 0) recolher(true);
+    else if (dy < -40 && cartao.classList.contains('recolhido')) recolher(false);
+  }, { passive: true });
   window.addEventListener('hashchange', function () { location.reload(); });
 
   function esc(s) {
@@ -256,6 +291,7 @@
     if (z >= ZOOM_CODIGOS) codigos.addTo(mapa); else codigos.remove();
   }
   mapa.on('zoomend', camadasDoZoom);
+  mapa.on('click', function () { recolher(true); });   // tocar no mapa abaixa o cartão
 
   // ---------------------------------------------------------------- cartão
   var c = centro(maior || todos);
@@ -278,6 +314,8 @@
   // 07/11/2026: "pode retirar"); a conferência da Estação continua avisando o RT
   html += '<p class="rodape">Contorno para visualização. Coordenadas oficiais na planta e no memorial.</p></div>';
   conteudo.innerHTML = html;
+  // muitas parcelas (desmembramento, glebas): abre recolhido para o mapa aparecer inteiro
+  if (imovel.parcelas.length > 3) recolher(true);
 
   function enquadrar() {
     var alto = cartao.classList.contains('recolhido') ? 60 : Math.min(cartao.offsetHeight, window.innerHeight * 0.46);
